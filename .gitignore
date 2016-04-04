@@ -1,0 +1,4 @@
+# exclude everything except directory foo/bar
+account1.go
+.tags
+.tags1
