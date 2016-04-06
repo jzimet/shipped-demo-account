@@ -7,5 +7,9 @@
     "user_id": 2,
     "username": "nick",
     "password": "123"
+  }, {
+    "user_id": 3,
+    "username": "demo",
+    "password": "demo"
   }]
 }

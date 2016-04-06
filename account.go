@@ -13,7 +13,7 @@ import (
 )
 
 // Login request JSON
-type Login struct {
+type User struct {
 	UserName string `json:"username"`
 	Password string `json:"password"`
 }
@@ -23,9 +23,8 @@ type Users struct {
 	Users []User `json:"users"`
 }
 
-type User struct {
+type Username struct {
 	UserName string `json:"username"`
-	Password string `json:"password"`
 }
 
 type Response struct {
@@ -34,17 +33,19 @@ type Response struct {
 	Message string `json:"message"`
 }
 
-const error = "ERROR"
-const success = "SUCCESS"
-
+// AuthResponse: Sent to Auth
 type AuthResponse struct {
 	AccessToken string `json:"accessToken"`
 	UserName    string `json:"username"`
 }
 
+const error = "ERROR"
+const success = "SUCCESS"
+
 func main() {
 	http.HandleFunc("/", HandleIndex)
 	http.HandleFunc("/v1/account/", account)
+	http.HandleFunc("/v1/session/", currentSession)
 
 	listenPort := getenv("SHIPPED_CATALOG_LISTEN_PORT", "8888")
 
@@ -80,8 +81,8 @@ func account(rw http.ResponseWriter, req *http.Request) {
 
 		if user.UserName != "" {
 			// Response
-			rw.WriteHeader(http.StatusNotFound)
-			success := response(success, http.StatusNotFound, "Logged out user "+user.UserName)
+			rw.WriteHeader(http.StatusAccepted)
+			success := response(success, http.StatusAccepted, "Logged out user "+user.UserName)
 			rw.Write(success)
 			log.Println("Succesfully logged out user " + user.UserName)
 
@@ -90,8 +91,8 @@ func account(rw http.ResponseWriter, req *http.Request) {
 			os.Create("session.json")
 		} else {
 			// No session
-			rw.WriteHeader(http.StatusNoContent)
-			err := response(error, http.StatusNoContent, "No user logged in")
+			rw.WriteHeader(http.StatusAccepted)
+			err := response(error, http.StatusAccepted, "No user logged in")
 			rw.Write(err)
 			log.Println("No user logged in")
 		}
@@ -104,7 +105,7 @@ func account(rw http.ResponseWriter, req *http.Request) {
 		}
 		// log.Println(string(body))
 
-		var t Login
+		var t User
 		err = json.Unmarshal(body, &t)
 		if err != nil {
 			log.Println(err)
@@ -129,13 +130,68 @@ func account(rw http.ResponseWriter, req *http.Request) {
 			log.Println("Login failed" + t.UserName)
 		}
 
-	case "PUT":
+	case "PUT", "DELETE", "OPTIONS":
 		// Update an existing record.
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 		err := response(error, http.StatusMethodNotAllowed, req.Method+" not allowed")
 		rw.Write(err)
-	case "DELETE":
-		// Update an existing record.
+	default:
+		// Give an error message.
+		rw.WriteHeader(http.StatusBadRequest)
+		err := response(error, http.StatusBadRequest, "Bad request")
+		rw.Write(err)
+	}
+}
+
+func currentSession(rw http.ResponseWriter, req *http.Request) {
+	rw.Header().Set("Content-Type", "application/json")
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+
+	switch req.Method {
+	case "POST":
+		// Get UserDB
+		file, e := ioutil.ReadFile("users.json")
+		if e != nil {
+			fmt.Printf("File error: %v\n", e)
+			os.Exit(1)
+		}
+
+		var jsontype Users
+		err := json.Unmarshal(file, &jsontype)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		// Read User
+		body, err := ioutil.ReadAll(req.Body)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		var user Username
+		err = json.Unmarshal(body, &user)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		log.Println(user.UserName)
+
+		for i := 0; i < len(jsontype.Users); i++ {
+			if jsontype.Users[i].UserName == user.UserName {
+				// Login
+				rw.WriteHeader(http.StatusOK)
+				success := response(success, http.StatusOK, "User found")
+				rw.Write(success)
+				return
+			}
+		}
+		// No session
+		rw.WriteHeader(http.StatusNoContent)
+		errors := response(error, http.StatusNoContent, "No user logged in")
+		rw.Write(errors)
+		log.Println("No user logged in")
+	case "PUT", "DELETE", "OPTIONS", "GET":
 		rw.WriteHeader(http.StatusMethodNotAllowed)
 		err := response(error, http.StatusMethodNotAllowed, req.Method+" not allowed")
 		rw.Write(err)

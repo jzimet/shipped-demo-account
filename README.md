@@ -34,18 +34,28 @@ Content-Type: text/html; charset=utf-8
 
 - **POST /v1/account/**
 ```
-curl -i -H "Content-Type: application/json" -X POST -d '{"username":"nick","password":"123"}' http://localhost:8000/v1/account/
+curl -i -H "Content-Type: application/json" -X POST -d '{"username":"nick","password":"123"}' http://localhost:8887/v1/account/
 Expected Result:
 {
     "success":true,
     "token": 12325343,
     "message":"Successfully logged in"
 }
-or curl -H "Content-Type: application/json" -X POST -d @loginExamplePost.json http://localhost:8000/v1/account/
+or curl -H "Content-Type: application/json" -X POST -d @loginExamplePost.json http://localhost:8887/v1/account/
 ```
 - **GET /v1/account/**
 ```
-curl -i -H "Content-Type: application/json" -X GET http://localhost:8000/v1/account/
+curl -i -H "Content-Type: application/json" -X GET http://localhost:8887/v1/account/
+Expected Result:
+{
+    "success":true,
+    "message":"Successfully logged out in"
+}
+```
+
+- **GET /v1/session/**
+```
+curl -i -H "Content-Type: application/json" -X GET http://localhost:8887/v1/session/
 Expected Result:
 {
     "success":true,
