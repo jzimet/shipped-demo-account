@@ -47,7 +47,7 @@ func main() {
 	http.HandleFunc("/v1/account/", account)
 	http.HandleFunc("/v1/session/", currentSession)
 
-	listenPort := getenv("SHIPPED_CATALOG_LISTEN_PORT", "8888")
+	listenPort := "8888"
 
 	log.Println("Listening on Port: " + listenPort)
 	http.ListenAndServe(fmt.Sprintf(":%s", listenPort), nil)
